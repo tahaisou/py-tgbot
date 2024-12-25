@@ -125,15 +125,45 @@ async def search_users(
     _: str = Depends(get_current_admin)
 ):
     """根据关键词搜索用户"""
-    query = select(User).where(
-        or_(
-            User.username.ilike(f"%{keyword}%"),
-            User.tg_first_name.ilike(f"%{keyword}%"),
-            User.tg_last_name.ilike(f"%{keyword}%")
+    try:
+        # 确保关键词不为空
+        if not keyword or keyword.isspace():
+            return []
+            
+        # 构建搜索查询
+        query = (
+            select(User)
+            .options(selectinload(User.tags))
+            .where(
+                or_(
+                    User.username.ilike(f"%{keyword}%"),
+                    User.tg_first_name.ilike(f"%{keyword}%"),
+                    User.tg_last_name.ilike(f"%{keyword}%"),
+                    User.platform_user_id.ilike(f"%{keyword}%"),
+                    User.note.ilike(f"%{keyword}%")
+                )
+            )
+            .order_by(User.last_interaction.desc())
         )
-    )
-    result = await db.execute(query)
-    return result.scalars().all() 
+        
+        # 执行查询
+        result = await db.execute(query)
+        users = result.scalars().all()
+        
+        # 打印调试信息
+        print(f"搜索关键词: {keyword}")
+        print(f"找到用户数: {len(users)}")
+        for user in users:
+            print(f"用户ID: {user.id}, 用户名: {user.username}, Platform ID: {user.platform_user_id}")
+            
+        return users
+        
+    except Exception as e:
+        print(f"搜索出错: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"搜索失败: {str(e)}"
+        )
 
 @router.get("/stats/chart", response_model=dict, summary="获取用户增长图表")
 async def get_user_chart_data(
@@ -290,9 +320,62 @@ async def send_message_to_user(
                     detail=f"图片发送失败: {response.get('description')}"
                 )
         
+        # 更新用户最后交互时间
+        update_stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(last_interaction=datetime.now())
+        )
+        await db.execute(update_stmt)
+        await db.commit()
+        
         return {"status": "success", "message": "消息已发送"}
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"消息发送失败: {str(e)}"
         ) 
+
+@router.get("/active/count", response_model=dict, summary="获取当日活跃用户数量")
+async def get_active_users_count(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin)
+):
+    """获取当日活跃用户数量（用于仪表盘）"""
+    today = datetime.now().date()
+    query = select(func.count(User.id)).where(
+        func.date(User.last_interaction) == today
+    )
+    result = await db.execute(query)
+    active_count = result.scalar()
+    
+    return {
+        "active_count": active_count or 0
+    }
+
+@router.get("/active/status", response_model=List[dict], summary="获取用户活跃状态")
+async def get_users_active_status(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin)
+):
+    """获取所有用户的活跃状态（用于用户列表）"""
+    today = datetime.now().date()
+    query = (
+        select(
+            User.id,
+            User.username,
+            User.last_interaction,
+            (func.date(User.last_interaction) == today).label("is_active")
+        )
+        .order_by(User.last_interaction.desc())
+    )
+    result = await db.execute(query)
+    users = result.all()
+    
+    return [
+        {
+            "user_id": user.id,
+            "is_active": bool(user.is_active)
+        }
+        for user in users
+    ] 

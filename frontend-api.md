@@ -87,9 +87,50 @@
 ### 2.4 搜索用户
 - **接口**: `/users/search`
 - **方法**: GET
+- **描述**: 根据关键词搜索用户，支持多字段模糊匹配
 - **参数**:
-  - `keyword`: 搜索关键词
-- **响应**: 同用户列表格式
+  - `keyword`: 搜索关键词（必填）
+    - 支持搜索的字段：
+      - 用户名（username）
+      - Telegram名字（tg_first_name）
+      - Telegram姓氏（tg_last_name）
+      - Telegram ID（platform_user_id）
+      - 用户备注（note）
+- **响应**:
+  ```json
+  [
+    {
+      "id": 1,
+      "username": "QooQSoon",
+      "nickname": null,
+      "platform_user_id": "6417801008",
+      "avatar_url": null,
+      "status": true,
+      "tg_first_name": "QooQ",
+      "tg_last_name": null,
+      "tg_language_code": "zh-hans",
+      "tg_is_bot": false,
+      "last_interaction": "2024-12-27T10:11:06",
+      "created_at": "2024-12-24T05:28:12",
+      "updated_at": "2024-12-27T10:11:05",
+      "note": "这是新的测试备注",
+      "tags": [
+        {
+          "id": 3,
+          "name": "测试标签",
+          "created_at": "2024-12-24T05:55:35"
+        }
+      ]
+    }
+  ]
+  ```
+- **说明**:
+  - 搜索采用模糊匹配（包含关键词即可）
+  - 大小写不敏感
+  - 任一字段匹配即返回用户信息
+  - 返回结果按最后交互时间降序排序
+  - 如果没有匹配结果，返回空数组 `[]`
+  - 搜索结果包含用户的完整信息，包括标签
 
 ### 2.5 获取用户增长图表数据
 - **接口**: `/users/stats/chart`
@@ -135,6 +176,35 @@
     "text": "消息内容",
     "parse_mode": "HTML"  // 可选：HTML, Markdown
   }
+  ```
+
+### 2.9 获取当日活跃用户数量
+- **接口**: `/users/active/count`
+- **方法**: GET
+- **描述**: 获取当日活跃用户数量，用于仪表盘显示
+- **响应**:
+  ```json
+  {
+    "active_count": 1  // 当日活跃用户数量
+  }
+  ```
+
+### 2.10 获取用户活跃状态
+- **接口**: `/users/active/status`
+- **方法**: GET
+- **描述**: 获取所有用户的活跃状态，用于用户列表页面显示
+- **响应**:
+  ```json
+  [
+    {
+      "user_id": 1,
+      "is_active": true  // true表示今日活跃，false表示今日未活跃
+    },
+    {
+      "user_id": 2,
+      "is_active": false
+    }
+  ]
   ```
 
 ## 3. 服务器管理 API
