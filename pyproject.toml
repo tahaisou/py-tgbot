@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "py-admin"
+version = "0.1.0"
+description = "Python Web Admin Project"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.109.0"
+uvicorn = "^0.25.0"
+sqlalchemy = "^2.0.25"
+aiomysql = "^0.2.0"
+pydantic = "^2.5.2"
+pydantic-settings = "^2.1.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.6"
+alembic = "^1.12.1"
+aiohttp = "^3.9.1"
+greenlet = "^3.0.3"
+apscheduler = "^3.10.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+black = "^23.11.0"
+isort = "^5.12.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 
