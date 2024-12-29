@@ -1,0 +1,2991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.js"></script>
+    <style>
+        :root {
+            /* 亮色模式变量 */
+            --primary-color: #000000;
+            --secondary-color: #86868b;
+            --accent-color: #2997ff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffd60a;
+            --sidebar-bg: #1d1d1f;
+            --card-bg: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --border-color: #d2d2d7;
+            --body-bg: #fbfbfd;
+            --card-bg-rgb: 255, 255, 255;
+        }
+
+        /* 暗色模式变量 */
+        [data-theme="dark"] {
+            --primary-color: #ffffff;
+            --secondary-color: #86868b;
+            --accent-color: #0a84ff;
+            --success-color: #32d74b;
+            --danger-color: #ff453a;
+            --warning-color: #ffd60a;
+            --sidebar-bg: #000000;
+            --card-bg: #1c1c1e;
+            --text-primary: #ffffff;
+            --text-secondary: #98989d;
+            --border-color: #38383a;
+            --body-bg: #000000;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text-primary);
+            transition: background-color 0.3s ease;
+        }
+
+        /* 侧边栏基础样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background: var(--sidebar-bg);
+            padding: 1.5rem;
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        /* 头像容器 */
+        .avatar-container {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        /* 折叠状态下的头像样式 */
+        .sidebar.collapsed .avatar-container {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+        }
+
+        /* 用户信息 */
+        .user-info {
+            color: white;
+        }
+
+        .user-info h6 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        /* 导航链接 */
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.8rem 1rem;
+            margin: 0.2rem 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        /* 底部按钮 */
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-footer .nav-link {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            margin: 0.2rem 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 折叠状态样式 */
+        .sidebar.collapsed .nav-link span,
+        .sidebar.collapsed .user-info,
+        .sidebar.collapsed .theme-toggle span,
+        .sidebar.collapsed .logout-btn span {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.8rem;
+        }
+
+        .sidebar.collapsed .nav-link i {
+            margin: 0;
+        }
+
+        .sidebar.collapsed .theme-toggle,
+        .sidebar.collapsed .logout-btn {
+            justify-content: center;
+            padding: 0.8rem;
+        }
+
+        /* 折叠按钮样式 */
+        .sidebar-toggle {
+            position: absolute;
+            right: -16px;
+            top: 20px;
+            width: 32px;
+            height: 32px;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .sidebar.collapsed .sidebar-toggle i {
+            transform: rotate(180deg);
+        }
+
+        /* 主内容区域样式 */
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+
+        /* 卡片样式 */
+        .stats-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+        }
+
+        .stats-card h3 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* 图表容器样式 */
+        .chart-container {
+            position: relative;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            height: 300px;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* 时间范围按钮组 */
+        .btn-group .btn {
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .btn-group .btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* 活动列表样式 */
+        .activity-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .activity-card .card-header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: transparent;
+        }
+
+        .activity-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: #f5f5f7;
+        }
+
+        .activity-item i {
+            color: var(--accent-color);
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: #e3fff3;
+            color: var(--success-color);
+        }
+
+        .status-badge.danger {
+            background: #ffe3e3;
+            color: var(--danger-color);
+        }
+
+        /* 页面标题 */
+        h2.page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                padding: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* 添加数据加载动画 */
+        .loading {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .loading::after {
+            content: '加载中...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* 数字动画 */
+        .stats-card h3 {
+            transition: all 0.3s ease;
+        }
+
+        /* 折叠按钮样式 */
+        .sidebar-toggle {
+            position: absolute;
+            right: -16px;
+            top: 1.5rem;
+            background: var(--sidebar-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .sidebar-toggle:hover {
+            color: white;
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            right: -16px;
+        }
+
+        .sidebar-toggle i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-toggle i {
+            transform: rotate(180deg);
+        }
+
+        /* 登出按钮样式 */
+        .logout-btn {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            padding: 0.8rem;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .sidebar.collapsed .logout-btn span {
+            display: none;
+        }
+
+        .sidebar.collapsed .logout-btn {
+            left: 0.5rem;
+            right: 0.5rem;
+            justify-content: center;
+        }
+
+        #userTrendChart {
+            height: calc(100% - 48px) !important;
+            width: 100% !important;
+        }
+
+        /* 添加终端相关样式 */
+        #terminal-container {
+            padding: 10px;
+        }
+        
+        #terminal-container .terminal {
+            border-radius: 4px;
+        }
+        
+        .server-item {
+            cursor: pointer;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .server-item:hover {
+            background: var(--border-color);
+        }
+        
+        .server-item.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* 加载状态样式 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(var(--card-bg-rgb), 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: inherit;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .error-state {
+            padding: 2rem;
+            text-align: center;
+            color: var(--danger-color);
+        }
+
+        .error-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .refresh-button {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin-bottom: 60px; /* 为底部固定区域留出空间 */
+        }
+
+        .tag-filter-container {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        #userTable thead {
+            background: var(--card-bg);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            border-bottom-color: var(--border-color);
+        }
+
+        .modal-footer {
+            border-top-color: var(--border-color);
+        }
+
+        /* 添加主题切换按钮样式 */
+        .theme-toggle {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            padding: 0.8rem 1rem;
+            margin: 0.2rem 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .theme-toggle i {
+            font-size: 1.2rem;
+        }
+
+        /* 调整搜索栏和按钮布局 */
+        .user-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-container input {
+            flex: 1;
+        }
+
+        .sync-btn {
+            white-space: nowrap;
+        }
+
+        /* 页面显示控制 */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 修复仪表盘页面样式 */
+        #dashboard .stats-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        #dashboard .chart-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            height: 400px;
+        }
+
+        #dashboard .activity-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        #dashboard .chart-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        #dashboard .chart-title {
+            font-weight: 600;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <!-- 折叠按钮 -->
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+            <i class='bx bx-chevron-left'></i>
+        </button>
+        
+        <div class="avatar-container mb-4">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=demo" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        </div>
+        <div class="text-center mb-4 user-info">
+            <h6 class="mb-1">Demo User</h6>
+            <small class="text-secondary">管理员</small>
+        </div>
+        <nav class="nav flex-column">
+            <a href="#dashboard" class="nav-link active" onclick="showPage('dashboard')">
+                <i class='bx bxs-dashboard'></i>
+                <span>仪表盘</span>
+            </a>
+            <a href="#users" class="nav-link" onclick="showPage('users')">
+                <i class='bx bxs-user-detail'></i>
+                <span>用户管理</span>
+            </a>
+            <a href="#servers" class="nav-link" onclick="showPage('servers')">
+                <i class='bx bxs-server'></i>
+                <span>服务器管理</span>
+            </a>
+            <a href="#terminal" class="nav-link" onclick="showPage('terminal')">
+                <i class='bx bx-terminal'></i>
+                <span>SSH终端</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="nav-link" onclick="toggleTheme()">
+                <i class='bx bx-sun'></i>
+                <span>切换主题</span>
+            </button>
+            <button class="nav-link" onclick="handleLogout()">
+                <i class='bx bx-log-out'></i>
+                <span>退出登录</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+        <!-- 仪表盘页面 -->
+        <div id="dashboard" class="page active">
+            <h2 class="page-title mb-4">仪表盘</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <p>总用户数</p>
+                        <h3 data-stat="total-users">--</h3>
+                        <small class="text-success" data-stat="user-growth">
+                            <i class='bx bx-up-arrow-alt'></i>
+                            <span>0%</span>
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <p>服务器数量</p>
+                        <h3 data-stat="total-servers">--</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <p>机器人数量</p>
+                        <h3 data-stat="total-bots">--</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <p>今日活跃用户</p>
+                        <h3 data-stat="active-users">--</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">用户增长趋势</div>
+                            <div class="btn-group ms-3">
+                                <button class="btn btn-sm btn-outline-secondary time-range-btn active" data-range="week">周</button>
+                                <button class="btn btn-sm btn-outline-secondary time-range-btn" data-range="month">月</button>
+                                <button class="btn btn-sm btn-outline-secondary time-range-btn" data-range="year">年</button>
+                            </div>
+                        </div>
+                        <div id="userTrendChart" style="height: calc(100% - 48px);"></div>
+                    </div>
+
+                    <div class="activity-card">
+                        <div class="card-header">
+                            <h5 class="chart-title mb-0">最近活动</h5>
+                        </div>
+                        <div id="activityList" class="p-0">
+                            <!-- 活动列表将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">服务器状态分布</div>
+                        </div>
+                        <div id="serverStatusChart" style="height: calc(100% - 48px);"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">机器人状态</div>
+                        </div>
+                        <div id="botStatusChart" style="height: calc(100% - 48px);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户管理页面 -->
+        <div id="users" class="page" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="page-title mb-0">用户管理</h2>
+                <div class="user-actions">
+                    <div class="search-container">
+                        <input type="text" id="userSearchInput" class="form-control" placeholder="搜索用户...">
+                        <button class="btn btn-primary" onclick="searchUsers()">搜索</button>
+                    </div>
+                    <button class="btn btn-success sync-btn" onclick="syncUsers()">
+                        <i class='bx bx-sync me-1'></i>同步用户
+                    </button>
+                </div>
+            </div>
+
+            <!-- 标签筛选区域 -->
+            <div class="tag-filter-container mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted">标签筛选：</span>
+                    <div id="tagFilterButtons" class="d-flex flex-wrap gap-2">
+                        <!-- 标签按钮将通过 JavaScript 动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表格容器 -->
+            <div class="table-container" style="height: calc(100vh - 280px); overflow-y: auto;">
+                <table id="userTable" class="table table-hover">
+                    <thead class="sticky-top">
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>Telegram</th>
+                            <th>状态</th>
+                            <th>最后交互</th>
+                            <th>备注</th>
+                            <th>标签</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- 用户数据将通过 JavaScript 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 底部固定区域 -->
+            <div class="position-fixed bottom-0 start-0 w-100 bg-dark py-3" style="left: var(--sidebar-width);">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <div class="total-users">总共 <span id="totalUsers">0</span> 个用户</div>
+                    <div class="pagination d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary prev-page" onclick="changePage(-1)">上一页</button>
+                        <button class="btn btn-sm btn-outline-secondary next-page" onclick="changePage(1)">下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 发送消息模态框 -->
+        <div class="modal fade" id="sendMessageModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">发送消息</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">消息类型</label>
+                            <select class="form-select" id="messageType">
+                                <option value="text">文本消息</option>
+                                <option value="HTML">HTML格式</option>
+                                <option value="Markdown">Markdown格式</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">消息内容</label>
+                            <textarea class="form-control" id="messageContent" rows="5" placeholder="请输入消息内容..."></textarea>
+                            <small class="text-muted">
+                                支持的格式：<br>
+                                - 文本：普通文本消息<br>
+                                - HTML：支持 &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;, &lt;a href=""&gt;, &lt;code&gt;, &lt;pre&gt; 等标签<br>
+                                - Markdown：支持 **粗体**, *斜体*, __下划线__, ~~删除线~~, [链接](url), `代码` 等语法
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="submitMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 服务器管理页面 -->
+        <div id="servers" class="page" style="display: none;">
+            <h2 class="mb-4 fw-bold">服务器管理</h2>
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <button class="btn btn-primary" onclick="showAddServerModal()">
+                        <i class='bx bx-plus me-1'></i>添加服务器
+                    </button>
+                    <div class="search-container d-flex gap-2">
+                        <input type="text" class="form-control" id="serverSearchInput" placeholder="搜索服务器...">
+                        <button class="btn btn-outline-primary" onclick="searchServers()">搜索</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户</th>
+                                <th>产品类型</th>
+                                <th>系统</th>
+                                <th>IP地址</th>
+                                <th>配置</th>
+                                <th>状态</th>
+                                <th>到期时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serverTableBody">
+                            <!-- 服务器数据将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加服务器模态框 -->
+        <div class="modal fade" id="addServerModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">添加服务器</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addServerForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">选择用户</label>
+                                    <select class="form-select" name="user_id" required>
+                                        <!-- 用户列表将通过JavaScript动态填充 -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">产品类型</label>
+                                    <input type="text" class="form-control" name="product_type" value="100M+10M" required>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">系统</label>
+                                    <select class="form-select" name="system" required>
+                                        <option value="centos7">CentOS 7</option>
+                                        <option value="ubuntu20">Ubuntu 20.04</option>
+                                        <option value="debian11">Debian 11</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">配置</label>
+                                    <input type="text" class="form-control" name="configs" placeholder="2核4G,100Mbps" required>
+                                    <small class="text-muted">多个配置用逗号分隔</small>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">IP地址</label>
+                                    <input type="text" class="form-control" name="server_ips" placeholder="多个IP用逗号分隔" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">端口</label>
+                                    <input type="text" class="form-control" name="server_port" value="22" required>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">用户名</label>
+                                    <input type="text" class="form-control" name="server_username" value="root" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">密码</label>
+                                    <input type="text" class="form-control" name="server_password" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">开始时间（可选）</label>
+                                <input type="datetime-local" class="form-control" name="start_date">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="addServer()">添加</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 续期服务器模态框 -->
+        <div class="modal fade" id="renewServerModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">续期服务器</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="renewServerForm">
+                            <input type="hidden" name="server_id">
+                            <input type="hidden" name="user_id">
+                            <div class="mb-3">
+                                <label class="form-label">管理员密码</label>
+                                <input type="password" class="form-control" name="admin_password" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="renewServer()">续期</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 机器人配置页面 -->
+        <div id="bots" class="page" style="display: none;">
+            <h2 class="mb-4 fw-bold">机器人配置</h2>
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <button class="btn btn-primary" onclick="showAddBotModal()">
+                        <i class='bx bx-plus me-1'></i>添加机器人
+                    </button>
+                    <div class="search-container d-flex gap-2">
+                        <input type="text" class="form-control" id="botSearchInput" placeholder="搜索机器人...">
+                        <button class="btn btn-outline-primary" onclick="searchBots()">搜索</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>机器人名称</th>
+                                <th>用户名</th>
+                                <th>Webhook URL</th>
+                                <th>状态</th>
+                                <th>最后检查</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="botTableBody">
+                            <!-- 机器人数据将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加机器人模态框 -->
+        <div class="modal fade" id="addBotModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">添加机器人</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addBotForm">
+                            <div class="mb-3">
+                                <label class="form-label">机器人名称</label>
+                                <input type="text" class="form-control" name="bot_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bot Token</label>
+                                <input type="text" class="form-control" name="bot_token" required>
+                                <small class="text-muted">从 @BotFather 获取</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Webhook URL（可选）</label>
+                                <input type="url" class="form-control" name="webhook_url">
+                                <small class="text-muted">用于接收消息更新的URL</small>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="addBot()">添加</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SSH终端页面 -->
+        <div id="terminal" class="page" style="display: none;">
+            <h2 class="mb-4 fw-bold">SSH终端</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">服务器列表</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush" id="serverList">
+                                <!-- 服务器列表将通过JavaScript动态填充 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">终端</h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="createNewTerminal()">
+                                    <i class='bx bx-plus'></i> 新建终端
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="clearTerminal()">
+                                    <i class='bx bx-trash'></i> 清除
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="terminal-container" style="height: 600px; background: var(--card-bg);">
+                                <!-- 终端将在这里初始化 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userTrendChart, serverStatusChart, botStatusChart;
+        let currentTimeRange = 'week'; // 默认时间范围
+        let currentPage = 0;
+        const pageSize = 10;
+        let userActiveStatus = {};
+
+        // 定义自动更新间隔（毫秒）
+        const AUTO_REFRESH_INTERVAL = 30000; // 30秒
+
+        // 当前页面ID
+        let currentPageId = 'dashboard';
+        
+        // 存储自动更新定时器
+        let autoRefreshTimer = null;
+
+        let term;
+        let fitAddon;
+        let currentSocket;
+        let activeServerId;
+
+        // 清除错误提示
+        function clearError() {
+            // 清除统计卡片的错误状态
+            document.querySelectorAll('.stats-card .alert').forEach(el => el.remove());
+            
+            // 清除图表的错误状态
+            document.querySelectorAll('.chart-container .alert').forEach(el => el.remove());
+            
+            // 清除活动列表的错误状态
+            const activityList = document.getElementById('activityList');
+            if (activityList && activityList.querySelector('.alert')) {
+                activityList.querySelector('.alert').remove();
+            }
+
+            // 移除加载状态
+            document.querySelectorAll('.loading').forEach(el => {
+                el.classList.remove('loading');
+            });
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            document.querySelectorAll('.chart-container').forEach(el => {
+                el.classList.add('loading');
+            });
+
+            document.querySelectorAll('[data-stat]').forEach(el => {
+                el.textContent = '加载中...';
+            });
+        }
+
+        // 显示错误信息
+        function showError(message, container = null) {
+            const errorHtml = `
+                <div class="alert alert-danger" role="alert">
+                    <i class='bx bx-error-circle me-2'></i>${message}
+                </div>
+            `;
+            
+            if (container) {
+                // 如果指定了容器，只在容器中显示错误
+                container.innerHTML = errorHtml;
+            } else {
+                // 否则在所有相关容器中显示错误
+                document.querySelectorAll('.stats-card h3').forEach(el => {
+                    el.textContent = '--';
+                });
+                
+                document.querySelectorAll('.chart-container').forEach(container => {
+                    const chartDiv = container.querySelector('[id$="Chart"]');
+                    if (chartDiv) {
+                        chartDiv.innerHTML = errorHtml;
+                    }
+                });
+                
+                const activityList = document.getElementById('activityList');
+                if (activityList) {
+                    activityList.innerHTML = errorHtml;
+                }
+            }
+        }
+
+        // 启动自动更新
+        function startAutoRefresh() {
+            stopAutoRefresh(); // 先停止现有的定时器
+            
+            // 根据当前页面设置自动更新
+            autoRefreshTimer = setInterval(() => {
+                switch (currentPageId) {
+                    case 'dashboard':
+                        fetchDashboardData(true);
+                        break;
+                    case 'users':
+                        fetchUsers(currentPage * pageSize, pageSize, true);
+                        break;
+                    case 'servers':
+                        fetchServers(true);
+                        break;
+                    case 'bots':
+                        fetchBots(true);
+                        break;
+                }
+            }, AUTO_REFRESH_INTERVAL);
+        }
+
+        // 停止自动更新
+        function stopAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+        }
+
+        // 修改页面切换函数
+        function showPage(pageId) {
+            currentPageId = pageId;
+            
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+                page.classList.remove('active');
+            });
+            
+            // 显示选中的页面
+            const targetPage = document.getElementById(pageId);
+            targetPage.style.display = 'block';
+            targetPage.classList.add('active');
+            
+            // 更新导航栏活动状态
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[href="#${pageId}"]`).classList.add('active');
+
+            // 根据页面ID加载相应的数据
+            if (pageId === 'dashboard') {
+                // 确保图表容器已经显示后再初始化图表
+                setTimeout(() => {
+                    initCharts();
+                    fetchDashboardData();
+                }, 100);
+            } else if (pageId === 'users') {
+                fetchUsers(currentPage * pageSize);
+            } else if (pageId === 'servers') {
+                fetchServers();
+            } else if (pageId === 'bots') {
+                fetchBots();
+            } else if (pageId === 'terminal') {
+                if (!term) {
+                    initTerminal();
+                }
+                loadServerList();
+                // 重新调整终端大小
+                setTimeout(() => {
+                    if (fitAddon) {
+                        fitAddon.fit();
+                    }
+                }, 100);
+            }
+
+            // 重新启动自动更新
+            startAutoRefresh();
+        }
+
+        // 修改时间范围切换函数
+        function changeTimeRange(range) {
+            currentTimeRange = range;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.time-range-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-range') === range) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 重新获取数据
+            fetchDashboardData();
+        }
+
+        // 修改初始化图表函数
+        function initCharts() {
+            if (!document.getElementById('userTrendChart')) return;
+
+            // 初始化用户趋势图
+            if (!userTrendChart) {
+                userTrendChart = echarts.init(document.getElementById('userTrendChart'));
+                userTrendChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'line'
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        top: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: [],
+                        axisLine: {
+                            lineStyle: {
+                                color: 'var(--border-color)'
+                            }
+                        },
+                        axisLabel: {
+                            color: 'var(--text-secondary)'
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        minInterval: 1,
+                        axisLine: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                color: 'var(--border-color)',
+                                type: 'dashed'
+                            }
+                        },
+                        axisLabel: {
+                            color: 'var(--text-secondary)'
+                        }
+                    },
+                    series: [{
+                        name: '用户数',
+                        type: 'line',
+                        smooth: true,
+                        data: [],
+                        symbolSize: 8,
+                        itemStyle: {
+                            color: 'var(--accent-color)'
+                        },
+                        lineStyle: {
+                            width: 3
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                                offset: 0,
+                                color: 'rgba(41, 151, 255, 0.3)'
+                            }, {
+                                offset: 1,
+                                color: 'rgba(41, 151, 255, 0.1)'
+                            }])
+                        }
+                    }]
+                });
+            }
+
+            // 初始化服务器状态图
+            if (!serverStatusChart && document.getElementById('serverStatusChart')) {
+                serverStatusChart = echarts.init(document.getElementById('serverStatusChart'));
+                serverStatusChart.setOption({
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'horizontal',
+                        bottom: '0',
+                        itemWidth: 10,
+                        itemHeight: 10,
+                        textStyle: {
+                            color: 'var(--text-secondary)'
+                        }
+                    },
+                    series: [{
+                        name: '服务器状态',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '40%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 4,
+                            borderColor: 'var(--card-bg)',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                formatter: '{b}: {c}',
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: []
+                    }]
+                });
+            }
+
+            // 初始化机器人状态图
+            if (!botStatusChart && document.getElementById('botStatusChart')) {
+                botStatusChart = echarts.init(document.getElementById('botStatusChart'));
+                botStatusChart.setOption({
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'horizontal',
+                        bottom: '0',
+                        itemWidth: 10,
+                        itemHeight: 10,
+                        textStyle: {
+                            color: 'var(--text-secondary)'
+                        }
+                    },
+                    series: [{
+                        name: '机器人状态',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '40%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 4,
+                            borderColor: 'var(--card-bg)',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                formatter: '{b}: {c}',
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: []
+                    }]
+                });
+            }
+        }
+
+        // 修改更新图表函数
+        function updateCharts(data) {
+            // 确保图表实例存在
+            if (!userTrendChart || !serverStatusChart || !botStatusChart) {
+                initCharts();
+            }
+
+            // 更新用户趋势图
+            if (data.user_trend && Array.isArray(data.user_trend) && userTrendChart) {
+                const dates = data.user_trend.map(item => {
+                    const date = new Date(item.date);
+                    switch (currentTimeRange) {
+                        case 'year':
+                            return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' });
+                        case 'month':
+                            return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+                        default: // week
+                            return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+                    }
+                });
+                const counts = data.user_trend.map(item => item.count);
+
+                try {
+                    userTrendChart.setOption({
+                        xAxis: { data: dates },
+                        series: [{ data: counts }]
+                    });
+                } catch (e) {
+                    console.warn('Error updating userTrendChart:', e);
+                }
+            }
+
+            // 更新服务器状态图
+            if (data.server_distribution && serverStatusChart) {
+                const dist = data.server_distribution;
+                const serverData = [
+                    { value: dist.running || 0, name: '运行中', itemStyle: { color: '#28a745' } },
+                    { value: dist.stopped || 0, name: '已停止', itemStyle: { color: '#6c757d' } },
+                    { value: dist.expired || 0, name: '已过期', itemStyle: { color: '#dc3545' } },
+                    { value: dist.error || 0, name: '异常', itemStyle: { color: '#ffd60a' } }
+                ].filter(item => item.value > 0);
+
+                try {
+                    serverStatusChart.setOption({
+                        series: [{ data: serverData }]
+                    });
+                } catch (e) {
+                    console.warn('Error updating serverStatusChart:', e);
+                }
+            }
+
+            // 更新机器人状态图
+            if (data.stats?.bots && botStatusChart) {
+                const botData = [
+                    { value: data.stats.bots.active || 0, name: '在线', itemStyle: { color: '#28a745' } },
+                    { value: (data.stats.bots.total - data.stats.bots.active) || 0, name: '离线', itemStyle: { color: '#dc3545' } }
+                ].filter(item => item.value > 0);
+
+                try {
+                    botStatusChart.setOption({
+                        series: [{ data: botData }]
+                    });
+                } catch (e) {
+                    console.warn('Error updating botStatusChart:', e);
+                }
+            }
+        }
+
+        // 修改仪表盘数据获取函数
+        async function fetchDashboardData(isSilentUpdate = false) {
+            const token = localStorage.getItem('token');
+            const tokenType = localStorage.getItem('token_type');
+            
+            if (!token || !tokenType) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                if (!isSilentUpdate) {
+                    // 显示加载状态
+                    document.querySelectorAll('[data-stat]').forEach(el => {
+                        if (!el.classList.contains('text-success')) {
+                            el.textContent = '--';
+                        }
+                    });
+                }
+
+                const response = await fetch(`http://localhost:8000/api/dashboard/overview?time_range=${currentTimeRange}`, {
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // 确保图表已初始化
+                if (!userTrendChart || !serverStatusChart || !botStatusChart) {
+                    initCharts();
+                }
+                
+                // 更新数据显示
+                if (result.data) {
+                    updateStats(result.data.stats);
+                    updateCharts(result.data);
+                    updateActivityList(result.data.activities);
+                } else {
+                    console.error('Invalid response format:', result);
+                    showError('数据格式错误');
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                if (!isSilentUpdate) {
+                    showError('获取仪表盘数据失败');
+                }
+            }
+        }
+
+        // 计算增长率
+        function calculateGrowthRate(trend) {
+            if (!trend || trend.length < 2) return 0;
+            
+            // 获取最近两天的数据
+            const lastDay = trend[trend.length - 1];
+            const previousDay = trend[trend.length - 2];
+            
+            if (!lastDay || !previousDay) return 0;
+            
+            const lastCount = lastDay.count || 0;
+            const prevCount = previousDay.count || 0;
+            
+            if (prevCount === 0) return lastCount > 0 ? 100 : 0;
+            
+            return Math.round(((lastCount - prevCount) / prevCount) * 100);
+        }
+
+        // 更新活动列表
+        function updateActivityList(activities) {
+            const activityList = document.getElementById('activityList');
+            if (!activityList) return;
+
+            if (!activities || activities.length === 0) {
+                activityList.innerHTML = '<div class="text-center text-muted py-3">暂无活动记录</div>';
+                return;
+            }
+            
+            activityList.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="d-flex align-items-center">
+                        <i class='bx ${getActivityIcon(activity.type)} me-2'></i>
+                        <div>
+                            <div>${activity.content || '未知活动'}</div>
+                            <small class="text-muted">${formatDateTime(activity.created_at)}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新仪表盘显示
+        function updateDashboard(data) {
+            // 更新统计卡片
+            updateStats(data.stats);
+            // 更新图表
+            updateCharts(data);
+            // 更新活动列表
+            updateActivityList(data.activities);
+        }
+
+        // 更新统计数字
+        function updateStats(stats) {
+            if (!stats) {
+                console.error('No stats data provided');
+                return;
+            }
+
+            try {
+                // 用户统计
+                const totalUsers = document.querySelector('[data-stat="total-users"]');
+                const activeUsers = document.querySelector('[data-stat="active-users"]');
+                const totalServers = document.querySelector('[data-stat="total-servers"]');
+                const totalBots = document.querySelector('[data-stat="total-bots"]');
+                
+                if (totalUsers) totalUsers.textContent = stats.users?.total_users || '--';
+                if (activeUsers) activeUsers.textContent = stats.users?.active_users_today || '--';
+                if (totalServers) totalServers.textContent = stats.servers?.total || '--';
+                if (totalBots) totalBots.textContent = stats.bots?.total || '--';
+                
+                // 更新用户增长率
+                const userGrowth = document.querySelector('[data-stat="user-growth"]');
+                if (userGrowth && stats.users?.growth_rate != null) {
+                    const growthRate = stats.users.growth_rate;
+                    userGrowth.innerHTML = `
+                        <i class='bx ${growthRate >= 0 ? 'bx-up-arrow-alt' : 'bx-down-arrow-alt'}'></i>
+                        <span>${Math.abs(growthRate)}%</span>
+                    `;
+                    userGrowth.style.color = growthRate >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+                showError('更新数据时发生错误');
+            }
+        }
+
+        // 数字动画效果
+        function animateNumber(selector, target) {
+            const element = document.querySelector(selector);
+            const start = parseInt(element.textContent) || 0;
+            const duration = 1000;
+            const steps = 60;
+            const increment = (target - start) / steps;
+            let current = start;
+            let step = 0;
+
+            const animate = setInterval(() => {
+                step++;
+                current += increment;
+                element.textContent = Math.round(current);
+
+                if (step >= steps) {
+                    clearInterval(animate);
+                    element.textContent = target;
+                }
+            }, duration / steps);
+        }
+
+        // 窗口大小改变时重绘图表
+        window.addEventListener('resize', () => {
+            userTrendChart?.resize();
+            serverStatusChart?.resize();
+            botStatusChart?.resize();
+        });
+
+        // 检查登录状态
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const tokenType = localStorage.getItem('token_type');
+            
+            if (!token || !tokenType) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            
+            return `${tokenType} ${token}`;
+        }
+
+        // 获取活动图标
+        function getActivityIcon(type) {
+            const icons = {
+                'login': 'bxs-user-plus',
+                'logout': 'bxs-user-minus',
+                'create': 'bx-plus-circle',
+                'update': 'bx-edit',
+                'delete': 'bx-trash'
+            };
+            return icons[type] || 'bx-bell';
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // 获取用户活跃状态
+        async function updateUserActiveStatus() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch('http://localhost:8000/api/v1/users/active/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const statusData = await response.json();
+                userActiveStatus = {};
+                statusData.forEach(item => {
+                    userActiveStatus[item.user_id] = item.is_active;
+                });
+            } catch (error) {
+                console.error('Error fetching user status:', error);
+            }
+        }
+
+        // 搜索用户
+        async function searchUsers() {
+            const token = checkAuth();
+            if (!token) return;
+
+            const keyword = document.querySelector('#userSearchInput').value.trim();
+            if (!keyword) {
+                fetchUsers(0);
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/users/search?keyword=${encodeURIComponent(keyword)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Unauthorized');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const users = await response.json();
+                updateUserTable(users);
+            } catch (error) {
+                console.error('Error searching users:', error);
+                showError('搜索用户失败');
+                if (error.message === 'Unauthorized') {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        // 同步用户
+        async function syncUsers() {
+            const token = localStorage.getItem('token');
+            const tokenType = localStorage.getItem('token_type');
+            
+            if (!token || !tokenType) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/users/sync', {
+                    method: 'POST',  // 改为POST方法
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '同步失败');
+                }
+
+                const result = await response.json();
+                showSuccess(`同步完成：新增 ${result.new_users} 个用户，更新 ${result.updated_users} 个用户`);
+                // 刷新用户列表
+                fetchUsers(currentPage * pageSize);
+            } catch (error) {
+                console.error('Error syncing users:', error);
+                showError(`同步用户失败: ${error.message}`);
+                if (error.message.includes('401')) {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        // 渲染用户表格
+        function renderUserTable(users) {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                const isActive = userActiveStatus[user.id] || false;
+                
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.username || '-'}</td>
+                    <td>
+                        ${user.tg_first_name || ''} ${user.tg_last_name || ''}
+                        <br>
+                        <small class="text-muted">@${user.platform_user_id || ''}</small>
+                    </td>
+                    <td>
+                        <span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">
+                            ${isActive ? '在线' : '离线'}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(user.last_interaction)}</td>
+                    <td>
+                        ${user.tags.map(tag => 
+                            `<span class="badge bg-info me-1">${tag.name}</span>`
+                        ).join('')}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="editUserNote(${user.id})">
+                            <i class='bx bx-edit-alt me-1'></i>备注
+                        </button>
+                        <button class="btn btn-sm btn-primary ms-1" onclick="editUserTags(${user.id})">
+                            <i class='bx bx-tag me-1'></i>标签
+                        </button>
+                        <button class="btn btn-sm btn-success ms-1" onclick="sendMessage(${user.id})">
+                            <i class='bx bx-message-square-dots me-1'></i>发消息
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('totalUsers').textContent = users.length;
+        }
+
+        // 编辑用户备注
+        async function editUserNote(userId) {
+            const currentNote = await getUserNote(userId);
+            const note = prompt('请输入用户备注：', currentNote || '');
+            if (note === null) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const tokenType = localStorage.getItem('token_type');
+                
+                if (!token || !tokenType) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch(`http://localhost:8000/api/v1/users/${userId}/note`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ note })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '更新失败');
+                }
+
+                showSuccess('备注更新成功');
+                fetchUsers(currentPage * pageSize);
+            } catch (error) {
+                console.error('Error updating note:', error);
+                showError(`更新备注失败: ${error.message}`);
+            }
+        }
+
+        // 获取用户备注
+        async function getUserNote(userId) {
+            try {
+                const token = localStorage.getItem('token');
+                const tokenType = localStorage.getItem('token_type');
+                
+                if (!token || !tokenType) return null;
+
+                const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) return null;
+
+                const user = await response.json();
+                return user.note;
+            } catch (error) {
+                console.error('Error fetching user note:', error);
+                return null;
+            }
+        }
+
+        // 编辑用户标签
+        async function editUserTags(userId) {
+            try {
+                const token = localStorage.getItem('token');
+                const tokenType = localStorage.getItem('token_type');
+                
+                if (!token || !tokenType) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // 获取当前用户标签
+                const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '获取标签失败');
+                }
+
+                const user = await response.json();
+                const currentTags = user.tags?.map(tag => tag.name).join(', ') || '';
+                
+                const newTags = prompt('请输入标签（多个标签用逗号分隔）：', currentTags);
+                if (newTags === null) return;
+
+                const tagList = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+                const updateResponse = await fetch(`http://localhost:8000/api/v1/users/${userId}/tags`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ tags: tagList })
+                });
+
+                if (!updateResponse.ok) {
+                    const error = await updateResponse.json();
+                    throw new Error(error.detail || '更新标签失败');
+                }
+
+                showSuccess('标签更新成功');
+                fetchUsers(currentPage * pageSize);
+            } catch (error) {
+                console.error('Error updating tags:', error);
+                showError(`更新标签失败: ${error.message}`);
+            }
+        }
+
+        // 发送消息给用户
+        async function sendMessage(userId) {
+            const text = prompt('请输入要发送的消息：');
+            if (text === null) return;
+
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch(`http://localhost:8000/api/v1/users/${userId}/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text,
+                        parse_mode: 'TEXT'
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '发送失败');
+                }
+
+                alert('消息发送成功！');
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showError(`发送消息失败: ${error.message}`);
+            }
+        }
+
+        // 切换页面
+        function changePage(direction) {
+            if (direction === 'prev' && currentPage > 0) {
+                currentPage--;
+            } else if (direction === 'next') {
+                currentPage++;
+            }
+            fetchUsers(currentPage * pageSize);
+        }
+
+        // 在页面切换时加载用户数据
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... 现有的初始化代码 ...
+            
+            // 添加用户页面的事件监听
+            document.getElementById('userSearchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchUsers();
+                }
+            });
+        });
+
+        // 获取机器人列表
+        async function fetchBots() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch('http://localhost:8000/api/v1/bot/config', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('token_type');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const bots = await response.json();
+                renderBotTable(bots);
+            } catch (error) {
+                console.error('Error fetching bots:', error);
+                showError('获取机器人列表失败');
+            }
+        }
+
+        // 渲染机器人表格
+        function renderBotTable(bots) {
+            const tbody = document.getElementById('botTableBody');
+            tbody.innerHTML = '';
+
+            bots.forEach(bot => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${bot.id}</td>
+                    <td>${bot.bot_name}</td>
+                    <td>@${bot.bot_username || ''}</td>
+                    <td>${bot.webhook_url || '-'}</td>
+                    <td>
+                        <span class="badge ${bot.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                            ${bot.status === 'active' ? '正常' : '错误'}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(bot.last_check_time)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="testBot(${bot.id})">
+                            <i class='bx bx-test-tube me-1'></i>测试
+                        </button>
+                        <button class="btn btn-sm ${bot.is_active ? 'btn-warning' : 'btn-success'} ms-1" 
+                                onclick="toggleBotStatus(${bot.id}, ${!bot.is_active})">
+                            <i class='bx ${bot.is_active ? 'bx-pause' : 'bx-play'} me-1'></i>
+                            ${bot.is_active ? '停用' : '启用'}
+                        </button>
+                        <button class="btn btn-sm btn-danger ms-1" onclick="deleteBot(${bot.id})">
+                            <i class='bx bx-trash me-1'></i>删除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 显示添加机器人模态框
+        function showAddBotModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addBotModal'));
+            modal.show();
+        }
+
+        // 添加机器人
+        async function addBot() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const form = document.getElementById('addBotForm');
+                const formData = new FormData(form);
+                const data = {
+                    bot_name: formData.get('bot_name'),
+                    bot_token: formData.get('bot_token'),
+                    webhook_url: formData.get('webhook_url') || null
+                };
+
+                const response = await fetch('http://localhost:8000/api/v1/bot/config', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '添加失败');
+                }
+
+                // 关闭模态框
+                bootstrap.Modal.getInstance(document.getElementById('addBotModal')).hide();
+                // 重新加载列表
+                fetchBots();
+                // 显示成功消息
+                alert('机器人添加成功！');
+            } catch (error) {
+                console.error('Error adding bot:', error);
+                showError(`添加机器人失败: ${error.message}`);
+            }
+        }
+
+        // 测试机器人
+        async function testBot(botId) {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch(`http://localhost:8000/api/v1/bot/config/${botId}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '测试失败');
+                }
+
+                const result = await response.json();
+                if (result.ok) {
+                    alert('机器人测试成功！');
+                } else {
+                    alert(`机器人测试失败: ${result.description || '未知错误'}`);
+                }
+                
+                // 重新加载列表以更新状态
+                fetchBots();
+            } catch (error) {
+                console.error('Error testing bot:', error);
+                showError(`测试机器人失败: ${error.message}`);
+            }
+        }
+
+        // 删除机器人
+        async function deleteBot(botId) {
+            if (!confirm('确定要删除这个机器人吗？')) return;
+
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch(`http://localhost:8000/api/v1/bot/config/${botId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '删除失败');
+                }
+
+                alert('机器人删除成功！');
+                fetchBots();
+            } catch (error) {
+                console.error('Error deleting bot:', error);
+                showError(`删除机器人失败: ${error.message}`);
+            }
+        }
+
+        // 切换机器人状态
+        async function toggleBotStatus(botId, newStatus) {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch(`http://localhost:8000/api/v1/bot/config/${botId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        is_active: newStatus
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '更新失败');
+                }
+
+                alert(`机器人${newStatus ? '启用' : '停用'}成功！`);
+                fetchBots();
+            } catch (error) {
+                console.error('Error updating bot status:', error);
+                showError(`更新机器人状态失败: ${error.message}`);
+            }
+        }
+
+        // 搜索机器人
+        function searchBots() {
+            const keyword = document.getElementById('botSearchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('botTableBody');
+            const rows = tbody.getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            }
+        }
+
+        // 在页面切换时加载机器人数据
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... 现有的初始化代码 ...
+            
+            // 添加机器人页面的事件监听
+            document.getElementById('botSearchInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchBots();
+                }
+            });
+        });
+
+        // 获取服务器列表
+        async function fetchServers() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch('http://localhost:8000/api/v1/servers/summary', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('token_type');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderServerTable(data);
+            } catch (error) {
+                console.error('Error fetching servers:', error);
+                showError('获取服务器列表失败');
+            }
+        }
+
+        // 渲染服务器表格
+        function renderServerTable(data) {
+            const tbody = document.getElementById('serverTableBody');
+            tbody.innerHTML = '';
+
+            data.users.forEach(user => {
+                user.servers.forEach(server => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${server.id}</td>
+                        <td>${user.username}</td>
+                        <td>${server.product_type}</td>
+                        <td>${server.system}</td>
+                        <td>${server.ips.join('<br>')}</td>
+                        <td>${server.configs.join('<br>')}</td>
+                        <td>
+                            <span class="badge ${getStatusBadgeClass(server.status)}">
+                                ${getStatusText(server.status)}
+                            </span>
+                        </td>
+                        <td>${formatDateTime(server.expire_date)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="showServerDetails(${server.id})">
+                                <i class='bx bx-info-circle me-1'></i>详情
+                            </button>
+                            <button class="btn btn-sm btn-warning ms-1" onclick="showRenewModal(${server.id}, ${user.id})">
+                                <i class='bx bx-time me-1'></i>续期
+                            </button>
+                            <button class="btn btn-sm btn-danger ms-1" onclick="deleteServer(${server.id}, ${user.id})">
+                                <i class='bx bx-trash me-1'></i>删除
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // 获取状态样式
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'normal': 'bg-success',
+                'pending': 'bg-warning',
+                'expired': 'bg-danger',
+                'expiring': 'bg-warning'
+            };
+            return classes[status] || 'bg-secondary';
+        }
+
+        // 获取状态文本
+        function getStatusText(status) {
+            const texts = {
+                'normal': '正常',
+                'pending': '待处理',
+                'expired': '已过期',
+                'expiring': '即将到期'
+            };
+            return texts[status] || '未知';
+        }
+
+        // 显示添加服务器模态框
+        async function showAddServerModal() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                // 获取用户列表
+                const response = await fetch('http://localhost:8000/api/v1/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const users = await response.json();
+                const select = document.querySelector('#addServerForm select[name="user_id"]');
+                select.innerHTML = users.map(user => 
+                    `<option value="${user.id}">${user.username} (@${user.platform_user_id})</option>`
+                ).join('');
+
+                const modal = new bootstrap.Modal(document.getElementById('addServerModal'));
+                modal.show();
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showError('加载用户列表失败');
+            }
+        }
+
+        // 添加服务器
+        async function addServer() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const form = document.getElementById('addServerForm');
+                const formData = new FormData(form);
+                const userId = formData.get('user_id');
+                
+                const data = {
+                    product_type: formData.get('product_type'),
+                    system: formData.get('system'),
+                    configs: formData.get('configs').split(',').map(s => s.trim()),
+                    server_ips: formData.get('server_ips').split(',').map(s => s.trim()),
+                    server_port: formData.get('server_port'),
+                    server_username: formData.get('server_username'),
+                    server_password: formData.get('server_password'),
+                    start_date: formData.get('start_date') || null
+                };
+
+                const response = await fetch(`http://localhost:8000/api/v1/servers/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '添加失败');
+                }
+
+                // 关闭模态框
+                bootstrap.Modal.getInstance(document.getElementById('addServerModal')).hide();
+                // 重新加载列表
+                fetchServers();
+                // 显示成功消息
+                alert('服务器添加成功！');
+            } catch (error) {
+                console.error('Error adding server:', error);
+                showError(`添加服务器失败: ${error.message}`);
+            }
+        }
+
+        // 显示续期模态框
+        function showRenewModal(serverId, userId) {
+            const form = document.getElementById('renewServerForm');
+            form.querySelector('[name="server_id"]').value = serverId;
+            form.querySelector('[name="user_id"]').value = userId;
+            const modal = new bootstrap.Modal(document.getElementById('renewServerModal'));
+            modal.show();
+        }
+
+        // 续期服务器
+        async function renewServer() {
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const form = document.getElementById('renewServerForm');
+                const serverId = form.querySelector('[name="server_id"]').value;
+                const userId = form.querySelector('[name="user_id"]').value;
+                const adminPassword = form.querySelector('[name="admin_password"]').value;
+
+                const response = await fetch(`http://localhost:8000/api/v1/servers/${userId}/${serverId}/renew`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_password: adminPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '续期失败');
+                }
+
+                const result = await response.json();
+                // 关闭模态框
+                bootstrap.Modal.getInstance(document.getElementById('renewServerModal')).hide();
+                // 重新加载列表
+                fetchServers();
+                // 显示成功消息
+                alert('服务器续期成功！');
+            } catch (error) {
+                console.error('Error renewing server:', error);
+                showError(`续期服务器失败: ${error.message}`);
+            }
+        }
+
+        // 删除服务器
+        async function deleteServer(serverId, userId) {
+            if (!confirm('确定要删除这个服务器吗？此操作不可恢复！')) return;
+
+            const adminPassword = prompt('请输入管理员密码：');
+            if (!adminPassword) return;
+
+            try {
+                const token = checkAuth();
+                if (!token) return;
+
+                const response = await fetch(`http://localhost:8000/api/v1/servers/${userId}/${serverId}?admin_password=${adminPassword}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '删除失败');
+                }
+
+                alert('服务器删除成功！');
+                fetchServers();
+            } catch (error) {
+                console.error('Error deleting server:', error);
+                showError(`删除服务器失败: ${error.message}`);
+            }
+        }
+
+        // 显示服务器详情
+        function showServerDetails(serverId) {
+            // TODO: 实现服务器详情展示
+            alert('服务器详情功能发中...');
+        }
+
+        // 搜索服务器
+        function searchServers() {
+            const keyword = document.getElementById('serverSearchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('serverTableBody');
+            const rows = tbody.getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            }
+        }
+
+        // 在页面切换时加载服务器数据
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... 现有的初始化代码 ...
+            
+            // 添加服务器页面的事件监听
+            document.getElementById('serverSearchInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchServers();
+                }
+            });
+        });
+
+        // 主题切换功能
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            // 更新主题
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // 更新主题切换按钮图标
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                themeIcon.className = newTheme === 'dark' ? 'bx bx-moon' : 'bx bx-sun';
+            }
+            
+            // 销毁现有图表
+            if (userTrendChart) {
+                try {
+                    userTrendChart.dispose();
+                } catch (e) {
+                    console.warn('Error disposing userTrendChart:', e);
+                }
+                userTrendChart = null;
+            }
+            if (serverStatusChart) {
+                try {
+                    serverStatusChart.dispose();
+                } catch (e) {
+                    console.warn('Error disposing serverStatusChart:', e);
+                }
+                serverStatusChart = null;
+            }
+            if (botStatusChart) {
+                try {
+                    botStatusChart.dispose();
+                } catch (e) {
+                    console.warn('Error disposing botStatusChart:', e);
+                }
+                botStatusChart = null;
+            }
+            
+            // 重新初始化图表
+            if (currentPageId === 'dashboard') {
+                setTimeout(() => {
+                    initCharts();
+                    fetchDashboardData();
+                }, 100);
+            }
+        }
+
+        // 用户管理页面相关函数
+        async function fetchUsers(skip = 0) {
+            const token = checkAuth();
+            if (!token) return;
+
+            try {
+                // 显示加载状态
+                const userTable = document.querySelector('#userTable tbody');
+                if (userTable) {
+                    userTable.innerHTML = '<tr><td colspan="8" class="text-center">加载中...</td></tr>';
+                }
+
+                const response = await fetch(`http://localhost:8000/api/v1/users?skip=${skip}&limit=${pageSize}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        console.error('Authentication failed:', await response.text());
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('token_type');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const users = await response.json();
+                updateUserTable(users);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                showError('获取用户列表失败');
+                if (error.message.includes('401')) {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        // 同步用户数据
+        async function syncUsers() {
+            const token = localStorage.getItem('token');
+            const tokenType = localStorage.getItem('token_type');
+            
+            if (!token || !tokenType) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/users/sync', {
+                    method: 'POST',  // 改为POST方法
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '同步失败');
+                }
+
+                const result = await response.json();
+                showSuccess(`同步完成：新增 ${result.new_users} 个用户，更新 ${result.updated_users} 个用户`);
+                // 刷新用户列表
+                fetchUsers(currentPage * pageSize);
+            } catch (error) {
+                console.error('Error syncing users:', error);
+                showError(`同步用户失败: ${error.message}`);
+                if (error.message.includes('401')) {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        // 更新用户表格
+        function updateUserTable(users) {
+            const userTableBody = document.getElementById('userTableBody');
+            if (!userTableBody) {
+                console.error('User table body not found');
+                return;
+            }
+
+            if (!users || users.length === 0) {
+                userTableBody.innerHTML = '<tr><td colspan="8" class="text-center">暂无用户数据</td></tr>';
+                document.getElementById('totalUsers').textContent = '0';
+                return;
+            }
+
+            userTableBody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>
+                        <div>
+                            <div>${user.username || '未设置用户名'}</div>
+                            <small class="text-muted">${user.platform_user_id}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div>${user.tg_first_name || ''} ${user.tg_last_name || ''}</div>
+                        <small class="text-muted">${user.tg_language_code || ''}</small>
+                    </td>
+                    <td>
+                        <span class="badge ${user.status ? 'bg-success' : 'bg-secondary'}">
+                            ${user.status ? '活跃' : '未活跃'}
+                        </span>
+                    </td>
+                    <td>${formatDateTime(user.last_interaction)}</td>
+                    <td>${user.note || '-'}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            ${user.tags?.map(tag => `
+                                <span class="badge bg-info">${tag.name}</span>
+                            `).join('') || ''}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editUserNote(${user.id})">
+                                <i class='bx bx-edit'></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="editUserTags(${user.id})">
+                                <i class='bx bx-tag'></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="showSendMessageModal(${user.id})">
+                                <i class='bx bx-message'></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // 更新总用户数
+            document.getElementById('totalUsers').textContent = users.length;
+
+            // 更新标签筛选按钮
+            updateTagFilters(users);
+        }
+
+        // 更新标签筛选按钮
+        function updateTagFilters(users) {
+            const tagFilterButtons = document.getElementById('tagFilterButtons');
+            if (!tagFilterButtons) return;
+
+            // 收集所有唯一的标签
+            const uniqueTags = new Set();
+            users.forEach(user => {
+                user.tags?.forEach(tag => uniqueTags.add(tag.name));
+            });
+
+            // 生成标签按钮
+            const tagButtons = Array.from(uniqueTags).map(tag => `
+                <button class="btn btn-sm btn-outline-info" onclick="filterByTag('${tag}')">
+                    ${tag}
+                    <span class="badge bg-secondary ms-1">${countUsersWithTag(users, tag)}</span>
+                </button>
+            `);
+
+            // 添加"全部"按钮
+            tagButtons.unshift(`
+                <button class="btn btn-sm btn-outline-primary active" onclick="filterByTag(null)">
+                    全部
+                    <span class="badge bg-secondary ms-1">${users.length}</span>
+                </button>
+            `);
+
+            tagFilterButtons.innerHTML = tagButtons.join('');
+        }
+
+        // 统计具有特定标签的用户数量
+        function countUsersWithTag(users, tagName) {
+            return users.filter(user => user.tags?.some(tag => tag.name === tagName)).length;
+        }
+
+        // 根据标签筛选用户
+        function filterByTag(tagName) {
+            const token = checkAuth();
+            if (!token) return;
+
+            // 更新按钮状态
+            document.querySelectorAll('#tagFilterButtons button').forEach(btn => {
+                btn.classList.remove('active');
+                if ((!tagName && btn.textContent.includes('全部')) || 
+                    (tagName && btn.textContent.includes(tagName))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 如果选择"全部"，重新获取所有用户
+            if (!tagName) {
+                fetchUsers(0);
+                return;
+            }
+
+            // 否则筛选具有特定标签的用户
+            fetch(`http://localhost:8000/api/v1/users?skip=0&limit=1000`, {
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(users => {
+                const filteredUsers = users.filter(user => 
+                    user.tags?.some(tag => tag.name === tagName)
+                );
+                updateUserTable(filteredUsers);
+            })
+            .catch(error => {
+                console.error('Error fetching users for tag filtering:', error);
+                showError('筛选用户失败');
+            });
+        }
+
+        // 显示发送消息模态框
+        function showSendMessageModal(userId) {
+            // 存储当前用户ID
+            document.getElementById('sendMessageModal').dataset.userId = userId;
+            // 重置表单
+            document.getElementById('messageType').value = 'text';
+            document.getElementById('messageContent').value = '';
+            // 显示模态框
+            new bootstrap.Modal(document.getElementById('sendMessageModal')).show();
+        }
+
+        // 发送消息
+        async function submitMessage() {
+            const modal = document.getElementById('sendMessageModal');
+            const userId = modal.dataset.userId;
+            const messageType = document.getElementById('messageType').value;
+            const content = document.getElementById('messageContent').value.trim();
+
+            if (!content) {
+                showError('请输入消息内容');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const tokenType = localStorage.getItem('token_type');
+                
+                if (!token || !tokenType) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch(`http://localhost:8000/api/v1/users/${userId}/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `${tokenType} ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: {
+                            text: content,
+                            parse_mode: messageType === 'text' ? undefined : messageType
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '发送失败');
+                }
+
+                // 关闭模态框
+                bootstrap.Modal.getInstance(modal).hide();
+                showSuccess('消息发送成功');
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showError(`发送消息失败: ${error.message}`);
+                if (error.message.includes('401')) {
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                }
+            }
+        }
+
+        // 更新分页信息
+        function updatePagination(totalUsers) {
+            const totalPages = Math.ceil(totalUsers / pageSize);
+            document.querySelector('.pagination-info').textContent = `总共 ${totalUsers} 个用户`;
+            
+            // 更新分页按钮状态
+            document.querySelector('.prev-page').disabled = currentPage === 0;
+            document.querySelector('.next-page').disabled = currentPage >= totalPages - 1;
+        }
+
+        // 分页导航
+        function changePage(delta) {
+            currentPage = Math.max(0, currentPage + delta);
+            fetchUsers(currentPage * pageSize);
+        }
+
+        // 在页面加载时初始化搜索功能
+        document.addEventListener('DOMContentLoaded', () => {
+            // 添加搜索输入框的回车事件监听
+            const searchInput = document.getElementById('userSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        searchUsers();
+                    }
+                });
+            }
+
+            // 添加搜索按钮点击事件监听
+            const searchButton = document.querySelector('.search-container button');
+            if (searchButton) {
+                searchButton.addEventListener('click', searchUsers);
+            }
+        });
+
+        // 添加页面加载时的初始化代码
+        document.addEventListener('DOMContentLoaded', () => {
+            // 从本地存储获取保存的主题
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // 设置正确的主题图标
+            const themeIcon = document.querySelector('.theme-toggle i');
+            if (themeIcon) {
+                themeIcon.className = savedTheme === 'dark' ? 'bx bx-moon' : 'bx bx-sun';
+            }
+
+            // 恢复侧边栏状态
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) {
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.querySelector('.main-content');
+                if (sidebar && mainContent) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('expanded');
+                }
+            }
+
+            // 初始化仪表盘
+            if (currentPageId === 'dashboard') {
+                setTimeout(() => {
+                    initCharts();
+                    fetchDashboardData();
+                }, 100);
+            }
+
+            // 添加时间范围按钮的点击事件监听
+            document.querySelectorAll('.time-range-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    changeTimeRange(btn.getAttribute('data-range'));
+                });
+            });
+        });
+
+        // 添加侧边栏折叠函数
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (sidebar && mainContent) {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+                
+                // 保存侧边栏状态到本地存储
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }
+        }
+
+        // 添加登出函数
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                // 清除本地存储的认证信息
+                localStorage.removeItem('token');
+                localStorage.removeItem('token_type');
+                
+                // 跳转到登录页面
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html> 
